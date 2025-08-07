@@ -171,7 +171,7 @@ $ ./deploy.sh -h
 
 ## Лицензия
 
-Лицензия проекта указана в репозитории: https://github.com/username/project.
+Лицензия проекта указана в репозитории: https://github.com/kalentivan/run_script.
 
 ```
 ```
