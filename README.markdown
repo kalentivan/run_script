@@ -42,17 +42,17 @@
 
 ### Опции
 
-| Опция | Описание | По умолчанию |
-| --- | --- | --- |
-| `-f <folder>` | Папка для проекта | `project` |
-| `-r <repo>` | Ссылка на Git-репозиторий | `https://github.com/username/project.git` |
-| `-n <net>` | Название Docker-сети | `project-net` |
-| `-i <image>` | Название Docker-образа | `project-backend` |
-| `-e <env>` | Путь к исходному `.env`-файлу | `/root/config/.env` |
-| `-b <branch>` | Ветка Git | `master` |
-| \`-s &lt;y | n&gt;\` | Установить или пропустить установку Docker |
-| \`-d &lt;y | n&gt;\` | Удалить текущую папку проекта |
-| `-h` | Показать справку и выйти | \- |
+| Опция         | Описание | По умолчанию                              |
+|---------------| --- |-------------------------------------------|
+| `-f <folder>` | Папка для проекта | `project`                                 |
+| `-r <repo>`   | Ссылка на Git-репозиторий | `https://github.com/username/project.git` |
+| `-n <net>`    | Название Docker-сети | `project-net`                             |
+| `-i <image>`  | Название Docker-образа | `project-backend`                         |
+| `-e <env>`    | Путь к исходному `.env`-файлу | `/root/config/.env`                       |
+| `-b <branch>` | Ветка Git | `master`                                  |
+| `-s <y or n>` | Установить или пропустить установку Docker | `y`                                       |
+| `-d <y or n>` | Удалить текущую папку проекта | `n`                                       |
+| `-h`          | Показать справку и выйти | \-                                        |
 
 Пример вывода команды с `-h`
 
@@ -171,7 +171,7 @@ $ ./deploy.sh -h
 
 ## Лицензия
 
-Лицензия проекта указана в репозитории: https://github.com/kalentivan/run_script.
+Лицензия проекта указана в репозитории: https://github.com/username/project.
 
 ```
 ```
