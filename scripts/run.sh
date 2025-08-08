@@ -1,7 +1,7 @@
 #!/bin/bash
 # ОБНОВЛЕНИЕ С ГИТА ПРОЕКТА
 
-BASE_ENV="/root/config/run.env"
+export BASE_ENV="/root/config/run.env"
 
 # Значения по умолчанию
 init() {
