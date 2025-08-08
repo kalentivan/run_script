@@ -195,9 +195,12 @@ git_with_retry() {
   local success=false
 
   while [ $attempt -le $max_attempts ]; do
+      echo "Попытка $attempt: выполняется команда: $*"
       local output
       output=$("$@" 2>&1)
       local status=$?
+      echo "Статус: $status"
+      echo "Вывод: $output"
 
       if [ $status -eq 0 ]; then
           success=true
@@ -208,8 +211,8 @@ git_with_retry() {
               while true; do
                   read -rp "Вы добавили SSH ключ в настройки репозитория? (y/n): " answer
                   case "$answer" in
-                    [Yy]* ) break ;;   # пользователь подтвердил — просто продолжаем попытки
-                    [Nn]* ) break ;;   # пользователь не подтвердил — тоже продолжаем
+                    [Yy]* ) break ;;
+                    [Nn]* ) break ;;
                     * ) echo "Пожалуйста, введите y или n." ;;
                   esac
               done
@@ -255,6 +258,10 @@ check_ssh_connect() {
     if [[ "$current_url" != "$https_url" ]]; then
       git remote set-url origin "$https_url"
     fi
+  fi
+  if ! pgrep ssh-agent > /dev/null; then
+    eval "$(ssh-agent -s)"
+    ssh-add "$SSH_KEY_PATH"
   fi
 }
 
