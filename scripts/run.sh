@@ -211,15 +211,43 @@ git_with_retry() {
 }
 
 # Обновить с гита
-git_update() {
+check_ssh_connect() {
+  if [ -z "$REPO" ]; then
+    echo "Ошибка: переменная REPO не задана"
+    return 1
+  fi
+
+  current_url=$(git remote get-url origin)
+
+  if [[ "$REPO" == git@* ]]; then
+    ssh_url="$REPO"
+    https_url=$(echo "$REPO" | sed -E 's#git@(.*):(.*)#https://\1/\2#')
+  elif [[ "$REPO" == https://* ]]; then
+    https_url="$REPO"
+    ssh_url=$(echo "$REPO" | sed -E 's#https://([^/]+)/(.+)#git@\1:\2#')
+  else
+    echo "Ошибка: REPO имеет неизвестный формат"
+    return 1
+  fi
+
   if [ -n "$SSH_KEY_PATH" ]; then
     export GIT_SSH_COMMAND="ssh -i $SSH_KEY_PATH -o IdentitiesOnly=yes"
+    if [[ "$current_url" != "$ssh_url" ]]; then
+      git remote set-url origin "$ssh_url"
+    fi
+  else
+    if [[ "$current_url" != "$https_url" ]]; then
+      git remote set-url origin "$https_url"
+    fi
   fi
+}
+
+git_update() {
+  check_ssh_connect
   if ! command -v git &>/dev/null; then
       echo "🛠 Установка Git..."
       sudo apt-get install -y git || error_exit "🛑Не удалось установить Git"
   fi
-
   if [ -d ".git" ] && [ -f ".git/config" ]; then
       echo "🔄 Репозиторий уже существует, обновляем..."
 
