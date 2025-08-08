@@ -1,7 +1,7 @@
 #!/bin/bash
 # ОБНОВЛЕНИЕ С ГИТА ПРОЕКТА
 
-BASE_ENV="/root/config/.env"
+BASE_ENV="/root/config/run.env"
 
 # Значения по умолчанию
 init() {
@@ -351,7 +351,8 @@ main() {
     rem_folder  # удалит + создаст и зайдёт
   fi
 
-  cd "$FOLDER" || error_exit "Не удалось перейти в папку"
+  mkdir -p "$FOLDER" || error_exit "🛑 Не удалось создать папку $FOLDER"
+  cd "$FOLDER" || error_exit "🛑 Не удалось перейти в папку $FOLDER"
   git_update      # клон или pull
   mkdir -p logs stat pgdata || error_exit "🛑Не удалось создать директории"
   init_net
