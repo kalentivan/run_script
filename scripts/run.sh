@@ -2,6 +2,7 @@
 # ОБНОВЛЕНИЕ С ГИТА ПРОЕКТА
 
 export BASE_ENV="/root/config/run.env"
+export SSH_KEY_PATH="/root/.ssh/my_project_key"
 
 # Значения по умолчанию
 init() {
@@ -218,6 +219,9 @@ git_update() {
 
   if [ -d ".git" ] && [ -f ".git/config" ]; then
       echo "🔄 Репозиторий уже существует, обновляем..."
+      if [ -n "$SSH_KEY_PATH" ]; then
+        export GIT_SSH_COMMAND="ssh -i $SSH_KEY_PATH -o IdentitiesOnly=yes"
+      fi
       git_with_retry git pull origin "$BRANCH"
   else
       if [ "$(ls -A .)" ]; then
