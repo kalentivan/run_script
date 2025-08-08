@@ -212,6 +212,9 @@ git_with_retry() {
 
 # Обновить с гита
 git_update() {
+  if [ -n "$SSH_KEY_PATH" ]; then
+    export GIT_SSH_COMMAND="ssh -i $SSH_KEY_PATH -o IdentitiesOnly=yes"
+  fi
   if ! command -v git &>/dev/null; then
       echo "🛠 Установка Git..."
       sudo apt-get install -y git || error_exit "🛑Не удалось установить Git"
@@ -219,9 +222,7 @@ git_update() {
 
   if [ -d ".git" ] && [ -f ".git/config" ]; then
       echo "🔄 Репозиторий уже существует, обновляем..."
-      if [ -n "$SSH_KEY_PATH" ]; then
-        export GIT_SSH_COMMAND="ssh -i $SSH_KEY_PATH -o IdentitiesOnly=yes"
-      fi
+
       git_with_retry git pull origin "$BRANCH"
   else
       if [ "$(ls -A .)" ]; then
