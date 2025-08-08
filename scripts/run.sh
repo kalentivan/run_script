@@ -195,10 +195,26 @@ git_with_retry() {
   local success=false
 
   while [ $attempt -le $max_attempts ]; do
-      if "$@"; then
+      local output
+      output=$("$@" 2>&1)
+      local status=$?
+
+      if [ $status -eq 0 ]; then
           success=true
           break
       else
+          if echo "$output" | grep -q "Permission denied (keyboard-interactive,publickey)"; then
+              echo "❌ Ошибка доступа по SSH: Permission denied (keyboard-interactive,publickey)."
+              while true; do
+                  read -rp "Вы добавили SSH ключ в настройки репозитория? (y/n): " answer
+                  case "$answer" in
+                    [Yy]* ) break ;;   # пользователь подтвердил — просто продолжаем попытки
+                    [Nn]* ) break ;;   # пользователь не подтвердил — тоже продолжаем
+                    * ) echo "Пожалуйста, введите y или n." ;;
+                  esac
+              done
+          fi
+
           echo "⚠️ Попытка $attempt из $max_attempts не удалась. Повторяем через 2 секунды..."
           sleep 2
           ((attempt++))
@@ -206,7 +222,7 @@ git_with_retry() {
   done
 
   if [ "$success" = false ]; then
-      error_exit "🛑Не удалось выполнить Git-операцию после $max_attempts попыток"
+      error_exit "🛑 Не удалось выполнить Git-операцию после $max_attempts попыток"
   fi
 }
 
