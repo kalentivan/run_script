@@ -271,9 +271,9 @@ git_update() {
       echo "🛠 Установка Git..."
       sudo apt-get install -y git || error_exit "🛑Не удалось установить Git"
   fi
+
   if [ -d ".git" ] && [ -f ".git/config" ]; then
       echo "🔄 Репозиторий уже существует, обновляем..."
-
       git_with_retry git pull origin "$BRANCH"
   else
       if [ "$(ls -A .)" ]; then
@@ -288,8 +288,11 @@ git_update() {
               error_exit "⛔ Операция прервана пользователем. Очистите каталог вручную или укажите другой путь."
           fi
       else
-          echo "⬇️ Клонирование репозитория в $FOLDER..."
-          git_with_retry git clone -b "$BRANCH" "$REPO" .
+          echo "📂 Инициализация нового git-репозитория..."
+          git init
+          git remote add origin "$REPO"
+          git_with_retry git fetch origin "$BRANCH"
+          git checkout -b "$BRANCH" "origin/$BRANCH"
       fi
   fi
 }
