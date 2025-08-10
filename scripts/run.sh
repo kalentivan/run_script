@@ -266,7 +266,6 @@ check_ssh_connect() {
 }
 
 git_update() {
-  check_ssh_connect
   if ! command -v git &>/dev/null; then
       echo "🛠 Установка Git..."
       sudo apt-get install -y git || error_exit "🛑Не удалось установить Git"
@@ -274,6 +273,7 @@ git_update() {
 
   if [ -d ".git" ] && [ -f ".git/config" ]; then
       echo "🔄 Репозиторий уже существует, обновляем..."
+      check_ssh_connect
       git_with_retry git pull origin "$BRANCH"
   else
       if [ "$(ls -A .)" ]; then
@@ -283,6 +283,7 @@ git_update() {
               echo "🧹 Удаление содержимого каталога $FOLDER..."
               rm -rf ./* .[^.]* 2>/dev/null
               echo "⬇️ Клонирование репозитория в $FOLDER..."
+              check_ssh_connect
               git_with_retry git clone -b "$BRANCH" "$REPO" .
           else
               error_exit "⛔ Операция прервана пользователем. Очистите каталог вручную или укажите другой путь."
@@ -291,6 +292,7 @@ git_update() {
           echo "📂 Инициализация нового git-репозитория..."
           git init
           git remote add origin "$REPO"
+          check_ssh_connect
           git_with_retry git fetch origin "$BRANCH"
           git checkout -b "$BRANCH" "origin/$BRANCH"
       fi
