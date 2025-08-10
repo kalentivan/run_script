@@ -266,6 +266,7 @@ check_ssh_connect() {
 }
 
 git_update() {
+  set -x
   if ! command -v git &>/dev/null; then
       echo "🛠 Установка Git..."
       sudo apt-get install -y git || error_exit "🛑Не удалось установить Git"
@@ -297,6 +298,7 @@ git_update() {
           git checkout -b "$BRANCH" "origin/$BRANCH"
       fi
   fi
+  set +x
 }
 
 # Собрать файл с переменными окружения
