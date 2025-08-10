@@ -238,6 +238,10 @@ start_ssh_agent() {
 
 # Обновить с гита
 check_ssh_connect() {
+   if [ -z "$SSH_KEY_PATH" ]; then
+    echo "$SSH_KEY_PATH не задан, подключаемся по HTTPS"
+    return 1
+  fi
   if [ -z "$REPO" ]; then
     echo "Ошибка: переменная REPO не задана"
     return 1
@@ -375,7 +379,7 @@ rem_folder() {
   if [ -d "$FOLDER" ]; then
       read -p "🛑 Папка '$FOLDER' уже существует. Удалить её? [y/N]: " confirm
       case "$confirm" in
-          [yY]|[нН])
+          [yY])
               echo "🗑 Удаляю папку: $FOLDER"
               rm -rf "$FOLDER"
               echo "📁 Создание новой папки $FOLDER..."
