@@ -2,7 +2,7 @@
 # ОБНОВЛЕНИЕ С ГИТА ПРОЕКТА
 
 export BASE_ENV="/root/config/run.env"
-export SSH_KEY_PATH="/root/.ssh/sapr"
+export SSH_KEY_PATH="/root/.ssh/my_project_key"
 
 # Значения по умолчанию
 init() {
@@ -236,6 +236,16 @@ check_ssh_connect() {
     return 1
   fi
 
+  # Запускаем ssh-agent, если не запущен
+  if ! pgrep ssh-agent > /dev/null; then
+    eval "$(ssh-agent -s)"
+  fi
+
+  # Добавляем ключ, если он не добавлен в ssh-agent
+  if ! ssh-add -l | grep -q "$(ssh-keygen -lf "$SSH_KEY_PATH" | awk '{print $2}')"; then
+    ssh-add "$SSH_KEY_PATH"
+  fi
+
   current_url=$(git remote get-url origin)
 
   if [[ "$REPO" == git@* ]]; then
@@ -249,6 +259,7 @@ check_ssh_connect() {
     return 1
   fi
 
+  # Устанавливаем правильный URL для git remote origin
   if [ -n "$SSH_KEY_PATH" ]; then
     export GIT_SSH_COMMAND="ssh -i $SSH_KEY_PATH -o IdentitiesOnly=yes"
     if [[ "$current_url" != "$ssh_url" ]]; then
@@ -259,14 +270,9 @@ check_ssh_connect() {
       git remote set-url origin "$https_url"
     fi
   fi
-  if ! pgrep ssh-agent > /dev/null; then
-    eval "$(ssh-agent -s)"
-    ssh-add "$SSH_KEY_PATH"
-  fi
 }
 
 git_update() {
-  set -x
   if ! command -v git &>/dev/null; then
       echo "🛠 Установка Git..."
       sudo apt-get install -y git || error_exit "🛑Не удалось установить Git"
@@ -291,14 +297,13 @@ git_update() {
           fi
       else
           echo "📂 Инициализация нового git-репозитория..."
-          git init
+          git init "$BRANCH"
           git remote add origin "$REPO"
           check_ssh_connect
           git_with_retry git fetch origin "$BRANCH"
           git checkout -b "$BRANCH" "origin/$BRANCH"
       fi
   fi
-  set +x
 }
 
 # Собрать файл с переменными окружения
