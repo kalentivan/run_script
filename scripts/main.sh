@@ -5,7 +5,23 @@ RUN_SCRIPT_URL="https://raw.githubusercontent.com/kalentivan/run_script/master/s
 RUN_ENV_URL="https://raw.githubusercontent.com/kalentivan/run_script/master/scripts/run.env"
 
 download_run_script() {
-  read -rp "Введите имя для скачанного скрипта (например, run.sh): " RUN_SCRIPT_NAME
+  while true; do
+    read -rp "Введите имя для скачанного скрипта (например, X): " RUN_SCRIPT_NAME
+
+    # Если пользователь ввёл только X или что-то без _run.sh — добавляем
+    if [[ ! "$RUN_SCRIPT_NAME" =~ _run\.sh$ ]]; then
+        RUN_SCRIPT_NAME="${RUN_SCRIPT_NAME%_run}_run.sh"
+    fi
+
+    # Проверка на допустимые символы
+    if [[ "$RUN_SCRIPT_NAME" =~ ^[A-Za-z0-9._-]+_run\.sh$ ]]; then
+        echo "📄 Скрипт: $RUN_SCRIPT_NAME"
+        break
+    else
+        echo "❌ Неверный формат. Допустимы только буквы, цифры, точки, дефисы и подчёркивания."
+    fi
+  done
+
   RUN_SCRIPT_PATH="./$RUN_SCRIPT_NAME"
 
   echo "⬇️ Скачиваем скрипт в файл $RUN_SCRIPT_PATH ..."
@@ -75,17 +91,23 @@ make_run_executable() {
 }
 
 create_ssh_key() {
+  local default_key_name="id_rsa"
   read -rp "🔐 Хотите создать SSH ключ для доступа к репозиторию? (y/n): " answer
   if [[ "$answer" =~ ^[Yy]$ ]]; then
-    read -rp "Введите имя файла ключа (без пути и расширения, например myproject): " key_name
-    key_name="${key_name:-id_rsa}"
+    read -rp "Введите имя файла ключа (без пути и расширения, например myproject) [${default_key_name}]: " key_name
+    key_name="${key_name:-$default_key_name}"
     key_path="$HOME/.ssh/$key_name"
 
     if [ -f "$key_path" ] || [ -f "${key_path}.pub" ]; then
       echo "⚠️ Файл ключа $key_path или $key_path.pub уже существует!"
-      read -rp "Перезаписать? (y/n): " overwrite
-      if ! [[ "$overwrite" =~ ^[Yy]$ ]]; then
-        echo "Отмена создания ключа."
+      read -rp "Перезаписать существующий ключ? (y/n): " overwrite
+      if [[ "$overwrite" =~ ^[Yy]$ ]]; then
+        echo "Перезаписываем ключ $key_path ..."
+        rm -f "$key_path" "${key_path}.pub"
+      else
+        echo "Используем существующий ключ $key_path."
+        # Добавляем ключ в run.sh если нужно и завершаем функцию
+        add_ssh_key_path_to_run "$key_path"
         return
       fi
     fi
@@ -97,34 +119,10 @@ create_ssh_key() {
       echo "🔑 Публичный ключ:"
       cat "${key_path}.pub"
       echo "Добавьте этот ключ в настройки доступа вашего репозитория."
+      add_ssh_key_path_to_run "$key_path"
 
-      # Копируем публичный ключ в буфер обмена
-      if command -v pbcopy &>/dev/null; then
-        cat "${key_path}.pub" | pbcopy
-        echo "📋 Публичный ключ скопирован в буфер обмена (macOS pbcopy)."
-      elif command -v xclip &>/dev/null; then
-        cat "${key_path}.pub" | xclip -selection clipboard
-        echo "📋 Публичный ключ скопирован в буфер обмена (Linux xclip)."
-      elif command -v wl-copy &>/dev/null; then
-        cat "${key_path}.pub" | wl-copy
-        echo "📋 Публичный ключ скопирован в буфер обмена (Wayland wl-copy)."
-      else
-        echo "⚠️ Не удалось скопировать ключ в буфер обмена — утилиты pbcopy, xclip или wl-copy не найдены."
-      fi
-
-      # Обновляем run.sh или run.env — например, здесь run.sh
-      local escaped_key_path=$(echo "$key_path" | sed 's/[\/&]/\\&/g')
-      if grep -q "^export SSH_KEY_PATH=" "$RUN_SCRIPT_PATH"; then
-        sed -i "s|^export SSH_KEY_PATH=.*|export SSH_KEY_PATH=\"$escaped_key_path\"|" "$RUN_SCRIPT_PATH"
-      else
-        echo "export SSH_KEY_PATH=\"$key_path\"" >> "$RUN_SCRIPT_PATH"
-      fi
-
-      echo "✅ Переменная SSH_KEY_PATH добавлена в $RUN_SCRIPT_PATH"
-
-      # Запрос подтверждения добавления ключа в репозиторий
       while true; do
-        read -rp "Вы добавили SSH ключ в настройки репозитория? (y/n) (прим: при копирование возможно добавление \n d ключ, из-за чего он не будет считаться валидным. Убедитесь, что вы вставляете одну строку без \n): " confirm
+        read -rp "⚠️⚠️ Вы добавили SSH ключ в настройки репозитория? (y/n) Внимание, при копирование убедитесь, что нет переносов строк \n в ключе: " confirm
         case "$confirm" in
           [Yy]* ) break ;;
           [Nn]* ) echo "Пожалуйста, добавьте ключ и подтвердите, когда будете готовы." ;;
@@ -134,10 +132,26 @@ create_ssh_key() {
 
     else
       echo "❌ Ошибка при создании SSH ключа."
+      exit 1
     fi
   else
     echo "Создание SSH ключа пропущено."
   fi
+}
+
+# Функция добавления пути к ключу в run.sh
+add_ssh_key_path_to_run() {
+  local key_path="$1"
+  local escaped_key_path
+  escaped_key_path=$(echo "$key_path" | sed 's/[\/&]/\\&/g')
+
+  if grep -q "^export SSH_KEY_PATH=" "$RUN_SCRIPT_PATH"; then
+    sed -i "s|^export SSH_KEY_PATH=.*|export SSH_KEY_PATH=\"$escaped_key_path\"|" "$RUN_SCRIPT_PATH"
+  else
+    echo "export SSH_KEY_PATH=\"$key_path\"" >> "$RUN_SCRIPT_PATH"
+  fi
+
+  echo "✅ Переменная SSH_KEY_PATH добавлена в $RUN_SCRIPT_PATH"
 }
 
 main() {
@@ -151,7 +165,15 @@ main() {
   echo -e "\n✅ Скрипт $RUN_SCRIPT_PATH готов к запуску."
   echo "📁 Ваш Docker .env файл: $DOCKER_ENV_PATH"
   echo "📁 Ваш run.env для скрипта: $RUN_ENV_PATH"
-  echo "Для запуска используйте $RUN_SCRIPT_PATH"
+  echo "Для запуска используйте: $RUN_SCRIPT_PATH"
+
+  read -rp "🚀 Запустить сейчас? (y/n): " run_now
+  if [[ "$run_now" =~ ^[Yy]$ ]]; then
+    echo "▶ Запускаю $RUN_SCRIPT_PATH..."
+    "$RUN_SCRIPT_PATH"
+  else
+    echo "⏩ Запуск пропущен."
+  fi
 }
 
 main "$@"
