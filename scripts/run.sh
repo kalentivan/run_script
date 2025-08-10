@@ -182,10 +182,10 @@ stop_container() {
     echo "🛑 Остановка контейнера $container..."
     docker stop "$container" || error_exit "🛑 Не удалось остановить контейнер $container"
   fi
-  if [ "$(docker ps -aq -f name="$container")" ]; then
-    echo "🗑️ Удаление контейнера $container..."
-    docker rm "$container" || error_exit "🛑 Не удалось удалить контейнер $container"
-  fi
+  # if [ "$(docker ps -aq -f name="$container")" ]; then
+  #   echo "🗑️ Удаление контейнера $container..."
+  #   docker rm "$container" || error_exit "🛑 Не удалось удалить контейнер $container"
+  # fi
 }
 
 # Функция для выполнения Git-операции с повторными попытками
