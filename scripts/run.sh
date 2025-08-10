@@ -1,7 +1,7 @@
 #!/bin/bash
 # ОБНОВЛЕНИЕ С ГИТА ПРОЕКТА
 
-export BASE_ENV="/root/config/run.env"
+export BASE_ENV="/root/config/s_run.env"
 export SSH_KEY_PATH="/root/.ssh/sapr"
 
 # Значения по умолчанию
@@ -229,16 +229,18 @@ git_with_retry() {
   fi
 }
 
+start_ssh_agent() {
+  if ! pgrep ssh-agent > /dev/null; then
+    eval "$(ssh-agent -s)"
+    ssh-add "$SSH_KEY_PATH"
+  fi
+}
+
 # Обновить с гита
 check_ssh_connect() {
   if [ -z "$REPO" ]; then
     echo "Ошибка: переменная REPO не задана"
     return 1
-  fi
-
-  # Запускаем ssh-agent, если не запущен
-  if ! pgrep ssh-agent > /dev/null; then
-    eval "$(ssh-agent -s)"
   fi
 
   # Добавляем ключ, если он не добавлен в ssh-agent
