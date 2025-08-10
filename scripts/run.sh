@@ -2,7 +2,7 @@
 # ОБНОВЛЕНИЕ С ГИТА ПРОЕКТА
 
 export BASE_ENV="/root/config/run.env"
-export SSH_KEY_PATH="/root/.ssh/my_project_key"
+export SSH_KEY_PATH="/root/.ssh/sapr"
 
 # Значения по умолчанию
 init() {
